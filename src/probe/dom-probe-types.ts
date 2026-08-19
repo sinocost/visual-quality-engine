@@ -22,6 +22,13 @@ export interface DomProbeTypography {
   fontReady: boolean;
 }
 
+export interface DomProbeClippingAncestor {
+  qualityElementId?: string;
+  tagName: string;
+  overflowX: string;
+  overflowY: string;
+}
+
 export interface DomProbeElementSnapshot {
   id: string;
   sceneId?: string;
@@ -42,6 +49,8 @@ export interface DomProbeElementSnapshot {
   scrollHeight: number;
   overflowX: string;
   overflowY: string;
+  /** Nearest non-root ancestor that actually clips this element. */
+  clippingAncestor?: DomProbeClippingAncestor;
   alignment?: DomProbeAlignment;
   typography?: DomProbeTypography;
 }

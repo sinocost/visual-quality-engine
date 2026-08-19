@@ -1,6 +1,6 @@
 {
   "name": "Visual Quality Engine",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "catalogMetrics": 50,
   "implementedP0Metrics": 15,
   "automaticProbe": {
@@ -9,6 +9,7 @@
     "alignmentMetadata": true,
     "fontDiagnostics": true,
     "textOverflowDiagnostics": true,
+    "ancestorClippingDiagnostics": true,
     "framePixelInspector": true,
     "remotionArtifactBridge": true,
     "manualLayoutSamplesRequired": false

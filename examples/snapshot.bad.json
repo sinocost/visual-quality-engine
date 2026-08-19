@@ -1,0 +1,37 @@
+{
+  "profile": "technical_explainer",
+  "fps": 30,
+  "frameWidth": 1920,
+  "frameHeight": 1080,
+  "metrics": {
+    "safeMarginRatio": 0.018,
+    "alignmentErrorPx1080": 11,
+    "unexpectedOverlapRatio": 0.08,
+    "fontFamilies": 4,
+    "minFontSizePx1080": 21,
+    "maxCjkCharsPerSecond": 11.2,
+    "maxConcurrentPrimaryMotionGroups": 5,
+    "linearEntranceExitRatio": 0.72,
+    "minKeyEventSpacingSec": 0.08,
+    "minResolutionHoldSec": 0.12,
+    "maxAbsVoiceSyncOffsetSec": 0.81,
+    "maxTeleportRatio": 0.19,
+    "maxPrimaryClaimsPerScene": 3,
+    "semanticLinkedMotionRatio": 0.61,
+    "renderIntegrityIssues": 2
+  },
+  "evidence": {
+    "M01": {
+      "sceneId": "scene-02",
+      "frameStart": 386,
+      "frameEnd": 421,
+      "elementIds": ["taskA", "taskB", "socket", "eventLoop", "bgParticles"]
+    },
+    "Q02": {
+      "sceneId": "scene-02",
+      "frameStart": 410,
+      "frameEnd": 418,
+      "elementIds": ["caption", "statusBadge"]
+    }
+  }
+}

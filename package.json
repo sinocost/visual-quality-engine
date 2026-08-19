@@ -1,12 +1,15 @@
 {
   "name": "visual-quality-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check:good": "node dist/cli.js examples/snapshot.good.json",
-    "check:bad": "node dist/cli.js examples/snapshot.bad.json"
+    "check:bad": "node dist/cli.js examples/snapshot.bad.json",
+    "check:remotion-adapter": "node dist/adapters/remotion-quality-adapter.check.js"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

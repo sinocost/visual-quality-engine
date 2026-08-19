@@ -10,14 +10,16 @@ They target the highest-frequency causes of low-quality AI technical animation: 
 
 ## Integration contract
 
-Your Remotion project only needs to produce a `QualitySnapshot` matching `schemas/quality-snapshot.schema.json`. The engine intentionally does not know your internal `VideoSpec` format.
+Your Remotion project produces structured quality telemetry. `RemotionProjectQualityAdapter` converts it into `QualitySnapshot`; the validator intentionally does not know the project's React component tree or internal `VideoSpec` format.
 
-Recommended extraction ownership:
+Extraction ownership:
 
 - **VideoSpec / SceneGraph:** C03, C04, T01, T03, S01, S02 metadata.
 - **Timeline / keyframes:** M01, M03, R03, R04, CN02.
 - **Transcript timestamps:** T06, R05.
 - **Preview render:** C06, Q02.
+
+See `docs/remotion-integration.md` for the concrete input contract and actual Remotion integration pattern.
 
 ## Motion semantics requirement
 
@@ -36,10 +38,31 @@ Add semantic metadata to motion events whenever possible:
 
 Treat `reason.type = decoration` as decorative motion. This makes S02/S04 measurable instead of subjective.
 
-## Exit criteria for v0.1
+## v0.2 Remotion adapter status
+
+Implemented:
+
+- `RemotionProjectQualityInput -> QualitySnapshot` for all 15 P0 metrics;
+- scene-relative to composition-absolute frame normalization;
+- layout/alignment/overlap measurement;
+- typography and CJK reading-load measurement;
+- motion concurrency/easing/teleport measurement;
+- rhythm, resolution hold and transcript sync measurement;
+- semantic motion and primary-claim measurement;
+- render integrity issue forwarding;
+- evidence generation and input validation;
+- good fixture `PASS / 100` and bad fixture `REJECT / 38` covering all 15 P0 checks.
+
+Next extraction layer:
+
+- Chromium DOM layout probe;
+- automatic render-integrity inspection;
+- vision/saliency metrics.
+
+## Exit criteria
 
 - P0 validator executes deterministically.
 - A known-good snapshot passes.
 - A known-bad snapshot reports explicit failures and evidence.
 - Hard-gate failure rejects output.
-- Quality report can be consumed by a future Revision Planner.
+- A real Remotion composition can export structured quality telemetry and receive a deterministic `QualitySnapshot`.

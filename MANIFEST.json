@@ -1,6 +1,6 @@
 {
   "name": "Visual Quality Engine",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "catalogMetrics": 50,
   "implementedP0Metrics": 15,
   "automaticProbe": {
@@ -12,7 +12,13 @@
     "ancestorClippingDiagnostics": true,
     "framePixelInspector": true,
     "remotionArtifactBridge": true,
-    "manualLayoutSamplesRequired": false
+    "manualLayoutSamplesRequired": false,
+    "manualElementAnnotationsRequired": false,
+    "autoElementDiscovery": true,
+    "coverageAnalysis": true,
+    "pixelSaliencyCritic": true,
+    "pluggableVisionCritic": true,
+    "realRemotionFixture": true
   },
   "p0MetricIds": [
     "C03", "C04", "C06", "T01", "T03", "T06", "M01", "M03",

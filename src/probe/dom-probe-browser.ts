@@ -1,18 +1,22 @@
-import type { ElementRole } from "../adapters/remotion-quality-types.js";
+import {
+  buildCoverage,
+  buildExplicitCandidates,
+  discoverAutoCandidates,
+  isHTMLElement,
+  promoteAutoCandidates,
+  resolveAutoDiscovery,
+} from "./dom-auto-discovery.js";
+import { toDomProbeSnapshot } from "./dom-element-snapshot.js";
 import {
   DOM_PROBE_VERSION,
-  type DomProbeAlignment,
-  type DomProbeClippingAncestor,
-  type DomProbeElementSnapshot,
   type DomProbeFrameArtifact,
   type DomProbeOptions,
+  type DomProbeElementSnapshot,
   type QualityElementAnnotation,
 } from "./dom-probe-types.js";
 
 const DEFAULT_ROOT_SELECTOR = "[data-vqe-root]";
 const DEFAULT_ELEMENT_SELECTOR = "[data-vqe-id]";
-const ROLES = new Set<ElementRole>(["primary", "secondary", "text", "decorative", "container"]);
-const CLIP_EPSILON_PX = 1;
 
 export function qualityRootAttributes(): Record<string, string> {
   return { "data-vqe-root": "true" };
@@ -23,14 +27,10 @@ export function qualitySceneAttributes(sceneId: string): Record<string, string> 
 }
 
 export function qualityElementAttributes(annotation: QualityElementAnnotation): Record<string, string> {
-  const attrs: Record<string, string> = {
-    "data-vqe-id": annotation.id,
-  };
+  const attrs: Record<string, string> = { "data-vqe-id": annotation.id };
   if (annotation.role) attrs["data-vqe-role"] = annotation.role;
   if (annotation.sceneId) attrs["data-vqe-scene-id"] = annotation.sceneId;
-  if (annotation.allowOverlapWith?.length) {
-    attrs["data-vqe-allow-overlap-with"] = annotation.allowOverlapWith.join(",");
-  }
+  if (annotation.allowOverlapWith?.length) attrs["data-vqe-allow-overlap-with"] = annotation.allowOverlapWith.join(",");
   if (annotation.allowClipping) attrs["data-vqe-allow-clipping"] = "true";
   if (annotation.allowTextOverflow) attrs["data-vqe-allow-text-overflow"] = "true";
   if (annotation.requiredVisible) attrs["data-vqe-required-visible"] = "true";
@@ -42,40 +42,36 @@ export function qualityElementAttributes(annotation: QualityElementAnnotation): 
   return attrs;
 }
 
-export function collectDomQualityProbeFrame(
-  doc: Document,
-  options: DomProbeOptions,
-): DomProbeFrameArtifact {
+export function collectDomQualityProbeFrame(doc: Document, options: DomProbeOptions): DomProbeFrameArtifact {
   const rootSelector = options.rootSelector ?? DEFAULT_ROOT_SELECTOR;
   const elementSelector = options.elementSelector ?? DEFAULT_ELEMENT_SELECTOR;
   const root = doc.querySelector<HTMLElement>(rootSelector);
   const queryRoot: ParentNode = root ?? doc;
-  const rootRect = root?.getBoundingClientRect() ?? {
-    left: 0,
-    top: 0,
-    width: options.width,
-    height: options.height,
-  };
+  const rootRect = root?.getBoundingClientRect() ?? { left: 0, top: 0, width: options.width, height: options.height };
 
-  const nodes = [...queryRoot.querySelectorAll<HTMLElement>(elementSelector)];
-  const ids = nodes.map((node) => node.dataset.vqeId?.trim()).filter(isNonEmptyString);
+  const explicitNodes = [...queryRoot.querySelectorAll<HTMLElement>(elementSelector)].filter((node) => isHTMLElement(doc, node));
+  const explicitIds = explicitNodes.map((node) => node.dataset.vqeId?.trim()).filter(isNonEmptyString);
   const counts = new Map<string, number>();
-  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
-  const duplicateIds = [...counts.entries()]
-    .filter(([, count]) => count > 1)
-    .map(([id]) => id)
-    .sort();
+  for (const id of explicitIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const duplicateIds = [...counts.entries()].filter(([, count]) => count > 1).map(([id]) => id).sort();
 
-  const elements = nodes
-    .map((node) => toSnapshot(doc, node, root, rootRect.left, rootRect.top))
+  const auto = resolveAutoDiscovery(options.autoDiscovery);
+  const reservedIds = new Set(explicitIds);
+  const explicitCandidates = buildExplicitCandidates(doc, explicitNodes, rootRect, reservedIds);
+  const autoCandidates = discoverAutoCandidates(doc, queryRoot, root, rootRect, elementSelector, reservedIds, auto);
+  const promotedAuto = promoteAutoCandidates(autoCandidates, auto.policy);
+  const tracked = [...explicitCandidates, ...promotedAuto];
+  const trackedNodeIds = new Map<HTMLElement, string>(tracked.map((candidate) => [candidate.node, candidate.id]));
+  const elements = tracked
+    .map((candidate) => toDomProbeSnapshot(doc, candidate, root, rootRect.left, rootRect.top, trackedNodeIds))
     .filter((item): item is DomProbeElementSnapshot => item !== null);
 
-  const fontsStatus = doc.fonts
-    ? doc.fonts.status === "loaded"
-      ? "loaded"
-      : "loading"
-    : "unsupported";
+  const allCounts = new Map<string, number>();
+  for (const element of elements) allCounts.set(element.id, (allCounts.get(element.id) ?? 0) + 1);
+  for (const [id, count] of allCounts) if (count > 1 && !duplicateIds.includes(id)) duplicateIds.push(id);
+  duplicateIds.sort();
 
+  const fontsStatus = doc.fonts ? (doc.fonts.status === "loaded" ? "loaded" : "loading") : "unsupported";
   return {
     version: DOM_PROBE_VERSION,
     frame: options.frame,
@@ -85,154 +81,8 @@ export function collectDomQualityProbeFrame(
     documentFontsStatus: fontsStatus,
     duplicateIds,
     elements,
+    coverage: auto.enabled ? buildCoverage([...explicitCandidates, ...autoCandidates], auto.policy) : undefined,
   };
-}
-
-function toSnapshot(
-  doc: Document,
-  node: HTMLElement,
-  root: HTMLElement | null,
-  rootLeft: number,
-  rootTop: number,
-): DomProbeElementSnapshot | null {
-  const id = node.dataset.vqeId?.trim();
-  if (!id) return null;
-
-  const rect = node.getBoundingClientRect();
-  const style = doc.defaultView?.getComputedStyle(node);
-  if (!style) return null;
-
-  const role = parseRole(node.dataset.vqeRole, node);
-  const text = normalizeText(node.textContent ?? "");
-  const fontSizePx = finiteOr(parseFloat(style.fontSize), 0);
-  const opacity = finiteOr(parseFloat(style.opacity), 1);
-  const parentTracked = node.parentElement?.closest<HTMLElement>(DEFAULT_ELEMENT_SELECTOR);
-  const sceneOwner = node.closest<HTMLElement>("[data-vqe-scene-id]");
-  const visible =
-    style.display !== "none" &&
-    style.visibility !== "hidden" &&
-    style.visibility !== "collapse" &&
-    opacity > 0.01 &&
-    rect.width > 0.5 &&
-    rect.height > 0.5;
-
-  const typography = text
-    ? {
-        fontFamily: style.fontFamily,
-        fontSizePx,
-        fontWeight: style.fontWeight,
-        lineHeightPx: style.lineHeight === "normal" ? null : finiteOr(parseFloat(style.lineHeight), null),
-        text,
-        fontReady: isFontReady(doc, fontSizePx, style.fontFamily),
-      }
-    : undefined;
-
-  return {
-    id,
-    sceneId: node.dataset.vqeSceneId?.trim() || sceneOwner?.dataset.vqeSceneId?.trim() || undefined,
-    role,
-    parentId: parentTracked?.dataset.vqeId?.trim() || undefined,
-    allowOverlapWith: splitList(node.dataset.vqeAllowOverlapWith),
-    allowClipping: node.dataset.vqeAllowClipping === "true",
-    allowTextOverflow: node.dataset.vqeAllowTextOverflow === "true",
-    requiredVisible: node.dataset.vqeRequiredVisible === "true",
-    box: {
-      x: rect.left - rootLeft,
-      y: rect.top - rootTop,
-      width: rect.width,
-      height: rect.height,
-    },
-    visible,
-    opacity,
-    display: style.display,
-    visibility: style.visibility,
-    clientWidth: node.clientWidth,
-    clientHeight: node.clientHeight,
-    scrollWidth: node.scrollWidth,
-    scrollHeight: node.scrollHeight,
-    overflowX: style.overflowX,
-    overflowY: style.overflowY,
-    clippingAncestor: findClippingAncestor(doc, node, root, rect),
-    alignment: parseAlignment(node),
-    typography,
-  };
-}
-
-function findClippingAncestor(
-  doc: Document,
-  node: HTMLElement,
-  root: HTMLElement | null,
-  rect: DOMRect,
-): DomProbeClippingAncestor | undefined {
-  let current = node.parentElement;
-  while (current && current !== root) {
-    const style = doc.defaultView?.getComputedStyle(current);
-    if (style) {
-      const ancestorRect = current.getBoundingClientRect();
-      const clipsX =
-        isClippingOverflow(style.overflowX) &&
-        (rect.left < ancestorRect.left - CLIP_EPSILON_PX ||
-          rect.right > ancestorRect.right + CLIP_EPSILON_PX);
-      const clipsY =
-        isClippingOverflow(style.overflowY) &&
-        (rect.top < ancestorRect.top - CLIP_EPSILON_PX ||
-          rect.bottom > ancestorRect.bottom + CLIP_EPSILON_PX);
-
-      if (clipsX || clipsY) {
-        return {
-          qualityElementId: current.dataset.vqeId?.trim() || undefined,
-          tagName: current.tagName.toLowerCase(),
-          overflowX: style.overflowX,
-          overflowY: style.overflowY,
-        };
-      }
-    }
-    current = current.parentElement;
-  }
-  return undefined;
-}
-
-function isClippingOverflow(value: string): boolean {
-  return value === "hidden" || value === "clip" || value === "auto" || value === "scroll";
-}
-
-function parseRole(value: string | undefined, node: HTMLElement): ElementRole {
-  if (value && ROLES.has(value as ElementRole)) return value as ElementRole;
-  if (normalizeText(node.textContent ?? "")) return "text";
-  return "secondary";
-}
-
-function parseAlignment(node: HTMLElement): DomProbeAlignment | undefined {
-  const groupId = node.dataset.vqeAlignGroup?.trim();
-  if (!groupId) return undefined;
-  const axis = node.dataset.vqeAlignAxis === "x" ? "x" : "y";
-  const rawAnchor = node.dataset.vqeAlignAnchor;
-  const anchor = rawAnchor === "center" || rawAnchor === "end" ? rawAnchor : "start";
-  return { groupId, axis, anchor };
-}
-
-function isFontReady(doc: Document, fontSizePx: number, fontFamily: string): boolean {
-  if (!doc.fonts || typeof doc.fonts.check !== "function") return true;
-  if (!fontSizePx || !fontFamily) return true;
-  try {
-    return doc.fonts.check(`${fontSizePx}px ${fontFamily}`);
-  } catch {
-    return doc.fonts.status === "loaded";
-  }
-}
-
-function normalizeText(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
-}
-
-function splitList(value: string | undefined): string[] | undefined {
-  if (!value) return undefined;
-  const parts = value.split(",").map((item) => item.trim()).filter(Boolean);
-  return parts.length ? parts : undefined;
-}
-
-function finiteOr<T>(value: number, fallback: T): number | T {
-  return Number.isFinite(value) ? value : fallback;
 }
 
 function isNonEmptyString(value: string | undefined): value is string {

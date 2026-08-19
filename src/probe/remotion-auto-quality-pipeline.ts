@@ -5,7 +5,9 @@ import type {
 } from "../adapters/remotion-quality-types.js";
 import { validateP0 } from "../p0-validator.js";
 import type { QualityReport, QualitySnapshot } from "../types.js";
+import { analyzeAutoProbeCoverage, type AutoProbeCoverageReport } from "./coverage-analyzer.js";
 import { inspectRenderedFrames, type CapturedRenderFrame } from "./frame-inspector.js";
+import { PixelSaliencyCritic, type VisionSaliencyCritic, type VisionSaliencyReport } from "./pixel-saliency-critic.js";
 import {
   materializeRemotionQualityProject,
   type RemotionAutoSceneInput,
@@ -39,12 +41,21 @@ export interface RemotionAutoQualityPipelineOptions {
   concurrency?: number | string;
   artifactPrefix?: string;
   additionalRenderDiagnostics?: RenderIntegrityIssue[];
+  /** Advisory coverage target; auto-discovered elements count as resolved coverage. */
+  coverageTarget?: number;
+  /** Pixel saliency is advisory and never becomes a P0 hard gate. */
+  saliency?: false | {
+    minCoveredSaliencyRatio?: number;
+    critic?: VisionSaliencyCritic;
+  };
 }
 
 export interface RemotionAutoQualityPipelineResult {
   sampledFrames: number[];
   probeFrames: DomProbeFrameArtifact[];
   renderDiagnostics: RenderIntegrityIssue[];
+  coverage: AutoProbeCoverageReport;
+  saliency: VisionSaliencyReport | null;
   snapshot: QualitySnapshot;
   report: QualityReport;
 }
@@ -127,6 +138,16 @@ export async function runRemotionAutoQualityPipeline(
     })),
   );
 
+  const coverage = analyzeAutoProbeCoverage(parsed.frames, options.coverageTarget ?? 0.85);
+  const saliency = options.saliency === false
+    ? null
+    : await (options.saliency?.critic ?? new PixelSaliencyCritic()).analyze({
+        frames: capturedFrames,
+        probeFrames: parsed.frames,
+        composition,
+        minCoveredSaliencyRatio: options.saliency?.minCoveredSaliencyRatio,
+      });
+
   const renderDiagnostics = dedupeIssues(issues);
   const project = materializeRemotionQualityProject({
     profile: options.profile,
@@ -143,6 +164,8 @@ export async function runRemotionAutoQualityPipeline(
     sampledFrames,
     probeFrames: parsed.frames,
     renderDiagnostics,
+    coverage,
+    saliency,
     snapshot,
     report,
   };

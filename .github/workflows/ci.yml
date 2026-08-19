@@ -1,0 +1,23 @@
+name: visual-quality-engine-ci
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+      - run: npm run check:auto-discovery
+      - run: npm run check:auto-probe
+      - run: npm run check:remotion-adapter
+      - run: npm run check:good
+      - run: npm run check:real-remotion-e2e

@@ -1,6 +1,6 @@
 {
   "name": "visual-quality-engine",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -19,7 +19,9 @@
     "check:good": "node dist/cli.js examples/snapshot.good.json",
     "check:bad": "node dist/cli.js examples/snapshot.bad.json",
     "check:remotion-adapter": "node dist/adapters/remotion-quality-adapter.check.js",
-    "check:auto-probe": "node dist/probe/auto-probe.check.js && node dist/probe/ancestor-clipping.check.js"
+    "check:auto-probe": "node dist/probe/auto-probe.check.js && node dist/probe/ancestor-clipping.check.js",
+    "check:auto-discovery": "node dist/probe/auto-discovery.check.js",
+    "check:real-remotion-e2e": "node dist/probe/real-remotion-e2e.check.js"
   },
   "dependencies": {
     "sharp": "0.34.5"
@@ -37,7 +39,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.513",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@remotion/bundler": "4.0.513"
   },
   "engines": {
     "node": ">=20"

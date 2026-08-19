@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MetricResult",
+  "type": "object",
+  "required": ["metricId", "status", "score", "confidence", "actual", "expected", "evidence"],
+  "properties": {
+    "metricId": {"type": "string"},
+    "status": {"enum": ["pass", "warn", "fail"]},
+    "score": {"type": "number", "minimum": 0, "maximum": 100},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "actual": {},
+    "expected": {},
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "sceneId": {"type": "string"},
+        "frameStart": {"type": "integer"},
+        "frameEnd": {"type": "integer"},
+        "elementIds": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "patch": {
+      "type": "object",
+      "properties": {
+        "target": {"type": "string"},
+        "property": {"type": "string"},
+        "before": {},
+        "after": {}
+      }
+    }
+  }
+}

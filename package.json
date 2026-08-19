@@ -1,0 +1,17 @@
+{
+  "name": "visual-quality-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check:good": "node dist/cli.js examples/snapshot.good.json",
+    "check:bad": "node dist/cli.js examples/snapshot.bad.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

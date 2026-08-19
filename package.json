@@ -1,6 +1,6 @@
 {
   "name": "visual-quality-engine",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "exports": {
@@ -19,7 +19,7 @@
     "check:good": "node dist/cli.js examples/snapshot.good.json",
     "check:bad": "node dist/cli.js examples/snapshot.bad.json",
     "check:remotion-adapter": "node dist/adapters/remotion-quality-adapter.check.js",
-    "check:auto-probe": "node dist/probe/auto-probe.check.js"
+    "check:auto-probe": "node dist/probe/auto-probe.check.js && node dist/probe/ancestor-clipping.check.js"
   },
   "dependencies": {
     "sharp": "0.34.5"

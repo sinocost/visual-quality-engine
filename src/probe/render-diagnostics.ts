@@ -99,6 +99,19 @@ function inspectElement(
     });
   }
 
+  if (!element.allowClipping && element.visible && element.clippingAncestor) {
+    const ancestor = element.clippingAncestor;
+    const label = ancestor.qualityElementId
+      ? `tracked ancestor ${ancestor.qualityElementId}`
+      : `${ancestor.tagName} ancestor`;
+    issues.push({
+      kind: "clipping",
+      frame: probe.frame,
+      elementIds: [element.id],
+      message: `tracked element is clipped by ${label} (overflow-x: ${ancestor.overflowX}, overflow-y: ${ancestor.overflowY})`,
+    });
+  }
+
   if (element.typography && element.visible) {
     if (!element.typography.fontReady) {
       issues.push({

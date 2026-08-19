@@ -1,20 +1,20 @@
 # Visual Quality Engine v0.1
 
-A metric-driven quality gate for professional technical animation.
+Engineering starter for evaluating AI-generated technical animations with measurable visual-quality rules.
 
-This package defines a 50-metric visual quality catalog and implements the first 15 P0 validators for technical explainer / Remotion-style animation workflows.
+## Included
 
-## Scope
+- `config/metrics.v0.1.json` — complete 50-metric catalog.
+- `config/metrics.p0.json` — P0 15-metric MVP subset.
+- `config/profile.technical-explainer.json` — default style profile.
+- `schemas/` — QualitySnapshot and MetricResult JSON Schemas.
+- `src/p0-validator.ts` — executable deterministic P0 validator.
+- `src/scoring.ts` — weighted category scoring helper.
+- `src/adapters/` — Remotion adapter boundary.
+- `examples/` — known-good / known-bad quality snapshots.
+- `docs/` — architecture and integration notes.
 
-- 50 visual quality metric definitions
-- 15 executable P0 validators
-- TypeScript data contracts
-- scoring and hard-gate logic
-- Remotion adapter contract
-- good / bad example snapshots
-- JSON schemas and implementation notes
-
-## Quick start
+## Run
 
 ```bash
 npm install
@@ -23,4 +23,13 @@ npm run check:good
 npm run check:bad
 ```
 
-`check:bad` is expected to exit non-zero because the fixture intentionally violates quality gates.
+Expected behavior:
+
+- `check:good` => `status: pass`
+- `check:bad` => `status: reject` because critical/hard-gate metrics fail
+
+## Design principle
+
+**Generator creates; Quality Engine rejects.**
+
+Do not ask one model to generate, self-review, and approve its own output without deterministic gates or an independent critic.

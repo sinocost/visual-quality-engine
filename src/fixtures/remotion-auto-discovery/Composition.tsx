@@ -32,12 +32,11 @@ export const AutoDiscoveryFixture: React.FC = () => {
         backgroundColor: "#0b1020",
         color: "white",
         fontFamily: "Arial, sans-serif",
-        padding: 24,
       }}
     >
       <div
         {...qualitySceneAttributes("scene-1")}
-        style={{display: "flex", flexDirection: "column", gap: 16, height: "100%"}}
+        style={{display: "flex", flexDirection: "column", gap: 16, height: "100%", padding: 24, boxSizing: "border-box"}}
       >
         <h1 id="hero-title" style={{fontSize: 34, margin: 0, fontWeight: 700}}>
           asyncio execution handoff
@@ -51,6 +50,7 @@ export const AutoDiscoveryFixture: React.FC = () => {
               opacity: taskAOpacity,
               width: 118,
               padding: 16,
+              boxSizing: "border-box",
               border: "1px solid rgba(255,255,255,0.3)",
               borderRadius: 12,
               backgroundColor: "#17213b",
@@ -66,6 +66,7 @@ export const AutoDiscoveryFixture: React.FC = () => {
               opacity: taskBOpacity,
               width: 118,
               padding: 16,
+              boxSizing: "border-box",
               border: "1px solid rgba(255,255,255,0.3)",
               borderRadius: 12,
               backgroundColor: "#17372f",

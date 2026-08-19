@@ -1,0 +1,30 @@
+{
+  "profile": "technical_explainer",
+  "fps": 30,
+  "frameWidth": 1920,
+  "frameHeight": 1080,
+  "metrics": {
+    "safeMarginRatio": 0.065,
+    "alignmentErrorPx1080": 2,
+    "unexpectedOverlapRatio": 0,
+    "fontFamilies": 2,
+    "minFontSizePx1080": 32,
+    "maxCjkCharsPerSecond": 4.8,
+    "maxConcurrentPrimaryMotionGroups": 2,
+    "linearEntranceExitRatio": 0.1,
+    "minKeyEventSpacingSec": 0.28,
+    "minResolutionHoldSec": 0.8,
+    "maxAbsVoiceSyncOffsetSec": 0.22,
+    "maxTeleportRatio": 0.05,
+    "maxPrimaryClaimsPerScene": 1,
+    "semanticLinkedMotionRatio": 0.94,
+    "renderIntegrityIssues": 0
+  },
+  "evidence": {
+    "R04": {
+      "sceneId": "asyncio-waiting",
+      "frameStart": 330,
+      "frameEnd": 354
+    }
+  }
+}

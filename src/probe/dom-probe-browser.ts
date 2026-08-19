@@ -2,6 +2,7 @@ import type { ElementRole } from "../adapters/remotion-quality-types.js";
 import {
   DOM_PROBE_VERSION,
   type DomProbeAlignment,
+  type DomProbeClippingAncestor,
   type DomProbeElementSnapshot,
   type DomProbeFrameArtifact,
   type DomProbeOptions,
@@ -11,6 +12,7 @@ import {
 const DEFAULT_ROOT_SELECTOR = "[data-vqe-root]";
 const DEFAULT_ELEMENT_SELECTOR = "[data-vqe-id]";
 const ROLES = new Set<ElementRole>(["primary", "secondary", "text", "decorative", "container"]);
+const CLIP_EPSILON_PX = 1;
 
 export function qualityRootAttributes(): Record<string, string> {
   return { "data-vqe-root": "true" };
@@ -65,7 +67,7 @@ export function collectDomQualityProbeFrame(
     .sort();
 
   const elements = nodes
-    .map((node) => toSnapshot(doc, node, rootRect.left, rootRect.top))
+    .map((node) => toSnapshot(doc, node, root, rootRect.left, rootRect.top))
     .filter((item): item is DomProbeElementSnapshot => item !== null);
 
   const fontsStatus = doc.fonts
@@ -89,6 +91,7 @@ export function collectDomQualityProbeFrame(
 function toSnapshot(
   doc: Document,
   node: HTMLElement,
+  root: HTMLElement | null,
   rootLeft: number,
   rootTop: number,
 ): DomProbeElementSnapshot | null {
@@ -149,9 +152,48 @@ function toSnapshot(
     scrollHeight: node.scrollHeight,
     overflowX: style.overflowX,
     overflowY: style.overflowY,
+    clippingAncestor: findClippingAncestor(doc, node, root, rect),
     alignment: parseAlignment(node),
     typography,
   };
+}
+
+function findClippingAncestor(
+  doc: Document,
+  node: HTMLElement,
+  root: HTMLElement | null,
+  rect: DOMRect,
+): DomProbeClippingAncestor | undefined {
+  let current = node.parentElement;
+  while (current && current !== root) {
+    const style = doc.defaultView?.getComputedStyle(current);
+    if (style) {
+      const ancestorRect = current.getBoundingClientRect();
+      const clipsX =
+        isClippingOverflow(style.overflowX) &&
+        (rect.left < ancestorRect.left - CLIP_EPSILON_PX ||
+          rect.right > ancestorRect.right + CLIP_EPSILON_PX);
+      const clipsY =
+        isClippingOverflow(style.overflowY) &&
+        (rect.top < ancestorRect.top - CLIP_EPSILON_PX ||
+          rect.bottom > ancestorRect.bottom + CLIP_EPSILON_PX);
+
+      if (clipsX || clipsY) {
+        return {
+          qualityElementId: current.dataset.vqeId?.trim() || undefined,
+          tagName: current.tagName.toLowerCase(),
+          overflowX: style.overflowX,
+          overflowY: style.overflowY,
+        };
+      }
+    }
+    current = current.parentElement;
+  }
+  return undefined;
+}
+
+function isClippingOverflow(value: string): boolean {
+  return value === "hidden" || value === "clip" || value === "auto" || value === "scroll";
 }
 
 function parseRole(value: string | undefined, node: HTMLElement): ElementRole {

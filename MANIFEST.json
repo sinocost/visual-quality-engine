@@ -1,0 +1,28 @@
+{
+  "name": "Visual Quality Engine",
+  "version": "0.1.0",
+  "catalogMetrics": 50,
+  "implementedP0Metrics": 15,
+  "p0MetricIds": [
+    "C03",
+    "C04",
+    "C06",
+    "T01",
+    "T03",
+    "T06",
+    "M01",
+    "M03",
+    "R03",
+    "R04",
+    "R05",
+    "CN02",
+    "S01",
+    "S02",
+    "Q02"
+  ],
+  "hardGates": [
+    "Q01",
+    "Q02"
+  ],
+  "defaultProfile": "technical_explainer"
+}

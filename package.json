@@ -1,17 +1,42 @@
 {
   "name": "visual-quality-engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "exports": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./remotion": {
+      "types": "./dist/remotion.d.ts",
+      "import": "./dist/remotion.js"
+    }
+  },
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check:good": "node dist/cli.js examples/snapshot.good.json",
     "check:bad": "node dist/cli.js examples/snapshot.bad.json",
-    "check:remotion-adapter": "node dist/adapters/remotion-quality-adapter.check.js"
+    "check:remotion-adapter": "node dist/adapters/remotion-quality-adapter.check.js",
+    "check:auto-probe": "node dist/probe/auto-probe.check.js"
+  },
+  "dependencies": {
+    "sharp": "0.34.5"
+  },
+  "peerDependencies": {
+    "@remotion/renderer": ">=4.0.506 <5",
+    "react": ">=18",
+    "remotion": ">=4.0.506 <5"
   },
   "devDependencies": {
+    "@remotion/renderer": "4.0.513",
+    "@types/node": "20.12.14",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.513",
     "typescript": "^5.8.3"
   },
   "engines": {

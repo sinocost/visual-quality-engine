@@ -1,68 +1,74 @@
 # Implementation Notes
 
-## v0.1 scope
+## Current version: v0.3
 
-Implement the 15 P0 metrics first:
+The quality policy remains the same 15 deterministic P0 metrics:
 
 `C03 C04 C06 T01 T03 T06 M01 M03 R03 R04 R05 CN02 S01 S02 Q02`
 
-They target the highest-frequency causes of low-quality AI technical animation: unsafe layout, weak readability, motion overload, mechanical easing, event crowding, missing hold, AV desync, object teleportation, scene overload, meaningless motion, and render defects.
+v0.3 changes the acquisition layer, not the metric thresholds.
 
-## Integration contract
+## Pipeline ownership
 
-Your Remotion project produces structured quality telemetry. `RemotionProjectQualityAdapter` converts it into `QualitySnapshot`; the validator intentionally does not know the project's React component tree or internal `VideoSpec` format.
-
-Extraction ownership:
-
-- **VideoSpec / SceneGraph:** C03, C04, T01, T03, S01, S02 metadata.
-- **Timeline / keyframes:** M01, M03, R03, R04, CN02.
-- **Transcript timestamps:** T06, R05.
-- **Preview render:** C06, Q02.
-
-See `docs/remotion-integration.md` for the concrete input contract and actual Remotion integration pattern.
-
-## Motion semantics requirement
-
-Add semantic metadata to motion events whenever possible:
-
-```json
-{
-  "element": "taskA",
-  "action": "move",
-  "reason": {
-    "type": "state_transition",
-    "trigger": "await_request"
-  }
-}
+```text
+VideoSpec semantic data
+        +
+selected Remotion frames
+        ↓
+Chromium DOM Probe + PNG Frame Inspector
+        ↓
+RemotionProjectQualityInput
+        ↓
+RemotionQualityAdapter
+        ↓
+QualitySnapshot
+        ↓
+P0 Validator
 ```
 
-Treat `reason.type = decoration` as decorative motion. This makes S02/S04 measurable instead of subjective.
+### Automatic now
 
-## v0.2 Remotion adapter status
+- `elements[].layoutSamples` from real DOM `getBoundingClientRect()` values;
+- computed typography and text content;
+- alignment groups from lightweight `data-vqe-*` metadata;
+- text overflow / clipping / font readiness diagnostics;
+- image-buffer validity, dimension checks and conservative flicker detection;
+- selected-frame planning around scene, motion and key-event boundaries.
 
-Implemented:
+### Still semantic / project-owned
 
-- `RemotionProjectQualityInput -> QualitySnapshot` for all 15 P0 metrics;
-- scene-relative to composition-absolute frame normalization;
-- layout/alignment/overlap measurement;
-- typography and CJK reading-load measurement;
-- motion concurrency/easing/teleport measurement;
-- rhythm, resolution hold and transcript sync measurement;
-- semantic motion and primary-claim measurement;
-- render integrity issue forwarding;
-- evidence generation and input validation;
-- good fixture `PASS / 100` and bad fixture `REJECT / 38` covering all 15 P0 checks.
+- scene boundaries;
+- primary claims;
+- motion event timing, priority and reason;
+- key events;
+- transcript timestamps.
 
-Next extraction layer:
+This separation is deliberate. Render facts should be measured; causal intent should not be guessed from pixels.
 
-- Chromium DOM layout probe;
-- automatic render-integrity inspection;
-- vision/saliency metrics.
+## Browser/server split
 
-## Exit criteria
+Use `visual-quality-engine/remotion` inside the composition. It contains only the annotation helpers and DOM Artifact probe.
 
-- P0 validator executes deterministically.
-- A known-good snapshot passes.
-- A known-bad snapshot reports explicit failures and evidence.
-- Hard-gate failure rejects output.
-- A real Remotion composition can export structured quality telemetry and receive a deterministic `QualitySnapshot`.
+Use `visual-quality-engine` in Node for renderer orchestration, `sharp` frame inspection, materialization and validation.
+
+## Quality gate
+
+All generated `RenderIntegrityIssue` values feed Q02. Critical P0 failures continue to reject output regardless of aggregate score.
+
+## Validation
+
+```bash
+npm run build
+npm run check:good
+npm run check:remotion-adapter
+npm run check:auto-probe
+```
+
+The bad snapshot fixture is expected to reject and therefore exits non-zero.
+
+## Next layer after v0.3
+
+- automatic canvas/WebGL-specific probes;
+- saliency / attention analysis;
+- richer pixel-level artifact detection;
+- Revision Planner patches that map metric violations back to Remotion props / VideoSpec fields.

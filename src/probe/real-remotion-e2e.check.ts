@@ -19,7 +19,7 @@ const scenes: RemotionAutoSceneInput[] = [{
       groupId: "task-a",
       kind: "entrance",
       priority: "primary",
-      startFrame: 10,
+      startFrame: 8,
       endFrame: 22,
       easing: "ease",
       reason: { type: "state_transition", trigger: "await" },

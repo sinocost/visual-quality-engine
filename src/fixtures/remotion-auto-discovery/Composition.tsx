@@ -12,7 +12,11 @@ import {
 
 export const AutoDiscoveryFixture: React.FC = () => {
   const frame = useCurrentFrame();
-  const taskAX = interpolate(frame, [10, 22], [-60, 0], {
+  const taskAX = interpolate(frame, [8, 22], [-60, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const taskAOpacity = interpolate(frame, [8, 12], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -44,6 +48,7 @@ export const AutoDiscoveryFixture: React.FC = () => {
             id="task-a"
             style={{
               translate: `${taskAX}px 0px`,
+              opacity: taskAOpacity,
               width: 118,
               padding: 16,
               border: "1px solid rgba(255,255,255,0.3)",

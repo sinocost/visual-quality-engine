@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QualitySnapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile", "fps", "frameWidth", "frameHeight", "metrics"],
+  "properties": {
+    "profile": {"type": "string"},
+    "fps": {"type": "number", "exclusiveMinimum": 0},
+    "frameWidth": {"type": "number", "exclusiveMinimum": 0},
+    "frameHeight": {"type": "number", "exclusiveMinimum": 0},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "safeMarginRatio",
+        "alignmentErrorPx1080",
+        "unexpectedOverlapRatio",
+        "fontFamilies",
+        "minFontSizePx1080",
+        "maxCjkCharsPerSecond",
+        "maxConcurrentPrimaryMotionGroups",
+        "linearEntranceExitRatio",
+        "minKeyEventSpacingSec",
+        "minResolutionHoldSec",
+        "maxAbsVoiceSyncOffsetSec",
+        "maxTeleportRatio",
+        "maxPrimaryClaimsPerScene",
+        "semanticLinkedMotionRatio",
+        "renderIntegrityIssues"
+      ],
+      "properties": {
+        "safeMarginRatio": {"type": "number"},
+        "alignmentErrorPx1080": {"type": "number"},
+        "unexpectedOverlapRatio": {"type": "number"},
+        "fontFamilies": {"type": "integer"},
+        "minFontSizePx1080": {"type": "number"},
+        "maxCjkCharsPerSecond": {"type": "number"},
+        "maxConcurrentPrimaryMotionGroups": {"type": "integer"},
+        "linearEntranceExitRatio": {"type": "number"},
+        "minKeyEventSpacingSec": {"type": "number"},
+        "minResolutionHoldSec": {"type": "number"},
+        "maxAbsVoiceSyncOffsetSec": {"type": "number"},
+        "maxTeleportRatio": {"type": "number"},
+        "maxPrimaryClaimsPerScene": {"type": "integer"},
+        "semanticLinkedMotionRatio": {"type": "number"},
+        "renderIntegrityIssues": {"type": "integer"}
+      }
+    }
+  }
+}

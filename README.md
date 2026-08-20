@@ -1,70 +1,74 @@
-# Visual Quality Engine v0.4
+# Visual Quality Engine v0.5
 
-Metric-driven quality gates for AI-generated Remotion technical animation.
+Metric-driven quality gates and independent visual criticism for AI-generated Remotion technical animation.
 
 ## Current pipeline
 
 ```text
-Real Remotion Fixture
-  -> @remotion/bundler + real Chromium renderFrames()
+Real Remotion render
   -> DOM Auto Discovery
   -> BoundingBox / Typography / Coverage
   -> Pixel Saliency Critic
-  -> RenderDiagnostics
   -> RemotionQualityAdapter
-  -> QualitySnapshot
-  -> P0 Quality Gate
+  -> QualitySnapshot / P0 Gate
+  -> Vision Critic v1
+     - Primary Focus
+     - Hierarchy
+     - Semantic Relevance
+     - Attention Competition
 ```
 
-## v0.4 key change
+## v0.5 key change
 
-`qualityElementAttributes()` is no longer required for most normal HTML elements.
+The deterministic engine still owns hard gates. Vision Critic is an independent advisory layer that judges visual meaning that DOM geometry and pixel saliency cannot reliably infer.
 
-The browser probe now discovers visually meaningful elements automatically. It prefers ordinary DOM `id` values so existing VideoSpec motion metadata can keep referring to `task-a`, `caption`, etc. Explicit VQE annotations remain available as overrides for roles, overlap policy, clipping policy and alignment metadata.
+`qualityElementAttributes()` remains optional for normal HTML elements. `RemotionDomQualityProbe` enables DOM auto-discovery by default; explicit annotations are overrides.
 
-```tsx
-<AbsoluteFill {...qualityRootAttributes()}>
-  <h1 id="hero-title">asyncio execution handoff</h1>
-  <div id="task-a">Task A</div>
-  <div id="task-b">Task B</div>
-  <RemotionDomQualityProbe />
-</AbsoluteFill>
+## Vision Critic
+
+Use any provider that implements `VisionCriticProvider`. A reference OpenAI Responses API provider is included without adding an SDK dependency.
+
+```ts
+import {
+  OpenAIVisionCriticProvider,
+  runOfficialRemotionVisionQualityPipeline,
+} from 'visual-quality-engine';
+
+const provider = new OpenAIVisionCriticProvider({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: process.env.VQE_VISION_MODEL!,
+});
+
+const result = await runOfficialRemotionVisionQualityPipeline(
+  {
+    serveUrl,
+    compositionId: 'AsyncioExplainer',
+    scenes,
+    transcript,
+  },
+  {
+    provider,
+    maxFrames: 8,
+    failureMode: 'advisory',
+  },
+);
+
+console.log(result.vision.aggregate);
+console.log(result.vision.findings);
 ```
 
-No per-element VQE annotation is required in the common case.
+The model name is intentionally supplied by the caller instead of being hard-coded into the engine.
 
-## Automatic discovery
+## Vision scoring semantics
 
-The Chromium probe scores visible DOM candidates using deterministic render facts:
+All four scores are `0..100`; higher is always better:
 
-- rendered area and centrality;
-- heading/text prominence and font weight;
-- media/canvas/SVG presence;
-- visible container styling;
-- stable native IDs / labels;
-- opacity and visibility.
+- `primaryFocus` — one clear intended focal point;
+- `hierarchy` — readable ordering between primary, secondary and supporting information;
+- `semanticRelevance` — visual emphasis supports the current scene claim;
+- `attentionCompetition` — unrelated elements do not compete for attention.
 
-High-confidence candidates are promoted into the existing quality model and automatically receive layout samples and typography samples.
-
-## Coverage and saliency
-
-The pipeline returns two advisory reports in addition to the P0 quality report:
-
-- `coverage` — explicit coverage vs auto-resolved coverage, plus key elements that were discovered without annotations;
-- `saliency` — pixel-level visual saliency coverage and uncovered high-attention regions.
-
-Saliency is deliberately advisory in v0.4 and does not trigger a P0 hard gate.
-
-## Explicit annotations are now overrides
-
-Use `qualityElementAttributes()` only when the automatic interpretation needs correction, for example:
-
-- force `role: 'primary'`;
-- allow intentional overlap;
-- allow intentional clipping;
-- define alignment groups;
-- require visibility;
-- pin a custom stable quality ID.
+Vision findings are advisory in v0.5 and do not trigger the P0 hard gate.
 
 ## Validation
 
@@ -73,13 +77,12 @@ npm install
 npm run build
 npm run check:auto-discovery
 npm run check:auto-probe
+npm run check:vision-critic
 npm run check:remotion-adapter
 npm run check:good
 npm run check:real-remotion-e2e
 ```
 
-`check:real-remotion-e2e` bundles a real Remotion fixture, renders selected frames in Chromium, receives DOM probe artifacts and frame buffers, and runs the complete automatic quality pipeline.
-
 `npm run check:bad` intentionally exits non-zero because its fixture must be rejected.
 
-See `docs/auto-discovery-and-saliency.md` and `docs/auto-quality-pipeline.md`.
+See `docs/vision-critic.md`, `docs/auto-discovery-and-saliency.md`, and `docs/auto-quality-pipeline.md`.

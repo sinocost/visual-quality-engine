@@ -17,3 +17,8 @@ export * from "./probe/sample-planner.js";
 export * from "./probe/remotion-auto-quality-pipeline.js";
 export * from "./probe/official-remotion-renderer.js";
 export * from "./probe/official-auto-quality-pipeline.js";
+export * from "./vision/vision-critic-types.js";
+export * from "./vision/vision-critic.js";
+export * from "./vision/openai-vision-critic-provider.js";
+export * from "./vision/vision-quality-pipeline.js";
+export * from "./vision/official-vision-quality-pipeline.js";

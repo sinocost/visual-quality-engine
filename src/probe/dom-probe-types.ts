@@ -29,6 +29,40 @@ export interface DomProbeClippingAncestor {
   overflowY: string;
 }
 
+export interface DomProbeCoverageCandidate {
+  id: string;
+  sceneId?: string;
+  source: "explicit" | "auto";
+  importanceScore: number;
+  promoted: boolean;
+  keyElement: boolean;
+  tagName: string;
+  nativeId?: string;
+  box: BoundingBox;
+}
+
+export interface DomProbeCoverage {
+  candidateCount: number;
+  explicitElementCount: number;
+  autoPromotedCount: number;
+  totalImportance: number;
+  explicitImportance: number;
+  resolvedImportance: number;
+  explicitCoverageRatio: number;
+  resolvedCoverageRatio: number;
+  candidates: DomProbeCoverageCandidate[];
+}
+
+export interface DomProbeAutoDiscoveryOptions {
+  enabled?: boolean;
+  minCandidateScore?: number;
+  minImportanceScore?: number;
+  keyElementScore?: number;
+  maxElements?: number;
+  minAreaRatio?: number;
+  ignoreSelectors?: string[];
+}
+
 export interface DomProbeElementSnapshot {
   id: string;
   sceneId?: string;
@@ -53,6 +87,11 @@ export interface DomProbeElementSnapshot {
   clippingAncestor?: DomProbeClippingAncestor;
   alignment?: DomProbeAlignment;
   typography?: DomProbeTypography;
+  /** Automatic-discovery provenance and evidence. */
+  source?: "explicit" | "auto";
+  importanceScore?: number;
+  nativeId?: string;
+  tagName?: string;
 }
 
 export interface DomProbeFrameArtifact {
@@ -64,6 +103,7 @@ export interface DomProbeFrameArtifact {
   documentFontsStatus: "loaded" | "loading" | "unsupported";
   duplicateIds: string[];
   elements: DomProbeElementSnapshot[];
+  coverage?: DomProbeCoverage;
 }
 
 export interface DomProbeOptions {
@@ -72,6 +112,7 @@ export interface DomProbeOptions {
   height: number;
   rootSelector?: string;
   elementSelector?: string;
+  autoDiscovery?: boolean | DomProbeAutoDiscoveryOptions;
 }
 
 export interface QualityElementAnnotation {

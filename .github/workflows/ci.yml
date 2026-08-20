@@ -18,6 +18,7 @@ jobs:
       - run: npm run build
       - run: npm run check:auto-discovery
       - run: npm run check:auto-probe
+      - run: npm run check:vision-critic
       - run: npm run check:remotion-adapter
       - run: npm run check:good
       - run: npm run check:real-remotion-e2e
